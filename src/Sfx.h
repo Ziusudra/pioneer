@@ -31,6 +31,14 @@ private:
 	vector3d m_vel;
 	float m_age;
 	enum TYPE m_type;
+
+	struct Vertex {
+		vector3f pos;
+		float u;
+		float v;
+		Vertex(const vector3f &_pos, float _u, float _v) :
+			pos(_pos), u(_u), v(_v) { }
+	};
 };
 
 #endif /* _SFX_H */

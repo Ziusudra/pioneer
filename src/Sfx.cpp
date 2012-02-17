@@ -72,7 +72,7 @@ void Sfx::TimeStepUpdate(const float timeStep)
 
 	switch (m_type) {
 		case TYPE_EXPLOSION:
-			if (m_age > 0.2) m_type = TYPE_NONE;
+			if (m_age > 3.0) m_type = TYPE_NONE;
 			break;
 		case TYPE_DAMAGE:
 			if (m_age > 2.0) m_type = TYPE_NONE;
@@ -84,6 +84,11 @@ void Sfx::TimeStepUpdate(const float timeStep)
 void Sfx::Render(const matrix4x4d &ftransform)
 {
 	Texture *smokeTex = 0;
+	Texture *sphereTex = 0;
+	Texture *glowTex = 0;
+	GLUquadricObj *sphere = 0;
+	std::vector<Vertex> verts;
+	float scale = 0;
 	float col[4];
 
 	vector3d fpos = ftransform * GetPosition();
@@ -91,18 +96,56 @@ void Sfx::Render(const matrix4x4d &ftransform)
 	switch (m_type) {
 		case TYPE_NONE: break;
 		case TYPE_EXPLOSION:
-			glPushMatrix();
-			glTranslatef(fpos.x, fpos.y, fpos.z);
-			glPushAttrib(GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT);
+			verts.push_back(Vertex(vector3f(-1, -1, 0), 0.f, 1.f));
+			verts.push_back(Vertex(vector3f(-1, 1, 0), 1.f, 1.f));
+			verts.push_back(Vertex(vector3f(1, 1, 0), 1.f, 0.f));
+			verts.push_back(Vertex(vector3f(1, -1, 0), 0.f, 0.f));
+
+			Render::State::UseProgram(0);
 			glDisable(GL_LIGHTING);
-			glColor3f(1,1,0.5);
-			gluSphere(Pi::gluQuadric, 1000*m_age, 20,20);
+			glEnable(GL_TEXTURE_2D);
+			glDepthMask(GL_FALSE);
+			glDisable(GL_CULL_FACE);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 			glEnable(GL_BLEND);
-			glColor4f(1,0.5,0,0.66);
-			gluSphere(Pi::gluQuadric, 1500*m_age, 20,20);
-			glColor4f(1,0,0,0.33);
-			gluSphere(Pi::gluQuadric, 2000*m_age, 20,20);
-			glPopAttrib();
+			glPushMatrix();
+
+			glTranslatef(fpos.x, fpos.y, fpos.z);
+			scale = 10 * m_age;
+			glScalef(scale, scale, scale);
+
+			glEnableClientState(GL_VERTEX_ARRAY);
+			glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+			glDisableClientState(GL_NORMAL_ARRAY);
+			glPushMatrix();
+
+			glowTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR "/textures/halo.png");
+			glowTex->Bind();
+			glColor3f(1,1,0.75);
+			glVertexPointer(3, GL_FLOAT, sizeof(Vertex), &verts[0].pos);
+			glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
+			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+
+			glPopMatrix();
+			glDisableClientState (GL_VERTEX_ARRAY);
+			glDisableClientState (GL_TEXTURE_COORD_ARRAY);
+
+			sphereTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR "/textures/explosion.png");
+			sphereTex->Bind();
+			sphere = gluNewQuadric();
+			gluQuadricDrawStyle(sphere, GLU_FILL);
+			gluQuadricNormals(sphere, GLU_SMOOTH);
+			gluQuadricOrientation(sphere, GLU_OUTSIDE);
+			gluQuadricTexture(sphere, GL_TRUE);
+			glColor3f(1,1,0.5);
+			gluSphere(sphere, 0.96f, 20,20);
+			glColor3f(1,0.5,0.25);
+			gluSphere(sphere, 0.98f, 20,20);
+			glColor3f(1,0.25,0.125);
+			gluSphere(sphere, 1, 20,20);
+			sphereTex->Unbind();
+
+			glEnable(GL_CULL_FACE);
 			glPopMatrix();
 			break;
 		case TYPE_DAMAGE:
@@ -140,10 +183,13 @@ void Sfx::Add(const Body *b, TYPE t)
 	sfx->m_type = t;
 	sfx->m_age = 0;
 	sfx->SetPosition(b->GetPosition());
-	sfx->m_vel = b->GetVelocity() + 200.0*vector3d(
-			Pi::rng.Double()-0.5,
-			Pi::rng.Double()-0.5,
-			Pi::rng.Double()-0.5);
+	if (t == TYPE_DAMAGE) {
+		sfx->m_vel = b->GetVelocity() + 200.0*vector3d(
+				Pi::rng.Double()-0.5,
+				Pi::rng.Double()-0.5,
+				Pi::rng.Double()-0.5);
+	}
+	else sfx->m_vel = b->GetVelocity();
 }
 
 void Sfx::TimeStepAll(const float timeStep, Frame *f)
