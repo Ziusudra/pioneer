@@ -8,7 +8,7 @@
 #include "TextureCache.h"
 #include "render/Render.h"
 
-#define MAX_SFX_PER_FRAME 1024
+static const int s_maxSfxPerFrame = 1024;
 
 Sfx::Sfx()
 {
@@ -36,13 +36,13 @@ void Sfx::Serialize(Serializer::Writer &wr, const Frame *f)
 	// how many sfx turds are active in frame?
 	int numActive = 0;
 	if (f->m_sfx) {
-		for (int i=0; i<MAX_SFX_PER_FRAME; i++) {
+		for (int i=0; i<s_maxSfxPerFrame; i++) {
 			if (f->m_sfx[i].m_type != TYPE_NONE) numActive++;
 		}
 	}
 	wr.Int32(numActive);
 
-	if (numActive) for (int i=0; i<MAX_SFX_PER_FRAME; i++) {
+	if (numActive) for (int i=0; i<s_maxSfxPerFrame; i++) {
 		if (f->m_sfx[i].m_type != TYPE_NONE) {
 			f->m_sfx[i].Save(wr);
 		}
@@ -53,7 +53,7 @@ void Sfx::Unserialize(Serializer::Reader &rd, Frame *f)
 {
 	int numActive = rd.Int32();
 	if (numActive) {
-		f->m_sfx = new Sfx[MAX_SFX_PER_FRAME];
+		f->m_sfx = new Sfx[s_maxSfxPerFrame];
 		for (int i=0; i<numActive; i++) {
 			f->m_sfx[i].Load(rd);
 		}
@@ -111,7 +111,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			col[2] = 0.0f;
 			col[3] = 1.0f-(m_age/2.0f);
 			vector3f pos(&fpos.x);
-			smokeTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR"/textures/smoke.png");
+			smokeTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR "/textures/smoke.png");
 			smokeTex->Bind();
 			Render::PutPointSprites(1, &pos, 20.0f, col);
 			break;
@@ -121,10 +121,10 @@ void Sfx::Render(const matrix4x4d &ftransform)
 Sfx *Sfx::AllocSfxInFrame(Frame *f)
 {
 	if (!f->m_sfx) {
-		f->m_sfx = new Sfx[MAX_SFX_PER_FRAME];
+		f->m_sfx = new Sfx[s_maxSfxPerFrame];
 	}
 
-	for (int i=0; i<MAX_SFX_PER_FRAME; i++) {
+	for (int i=0; i<s_maxSfxPerFrame; i++) {
 		if (f->m_sfx[i].m_type == TYPE_NONE) {
 			return &f->m_sfx[i];
 		}
@@ -149,7 +149,7 @@ void Sfx::Add(const Body *b, TYPE t)
 void Sfx::TimeStepAll(const float timeStep, Frame *f)
 {
 	if (f->m_sfx) {
-		for (int i=0; i<MAX_SFX_PER_FRAME; i++) {
+		for (int i=0; i<s_maxSfxPerFrame; i++) {
 			if (f->m_sfx[i].m_type != TYPE_NONE) {
 				f->m_sfx[i].TimeStepUpdate(timeStep);
 			}
@@ -168,7 +168,7 @@ void Sfx::RenderAll(const Frame *f, const Frame *camFrame)
 		matrix4x4d ftran;
 		Frame::GetFrameTransform(f, camFrame, ftran);
 
-		for (int i=0; i<MAX_SFX_PER_FRAME; i++) {
+		for (int i=0; i<s_maxSfxPerFrame; i++) {
 			if (f->m_sfx[i].m_type != TYPE_NONE) {
 				f->m_sfx[i].Render(ftran);
 			}
