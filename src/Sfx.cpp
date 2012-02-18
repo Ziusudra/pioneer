@@ -137,11 +137,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			gluQuadricNormals(sphere, GLU_SMOOTH);
 			gluQuadricOrientation(sphere, GLU_OUTSIDE);
 			gluQuadricTexture(sphere, GL_TRUE);
-			glColor3f(1,1,0.5);
-			gluSphere(sphere, 0.96f, 20,20);
-			glColor3f(1,0.5,0.25);
-			gluSphere(sphere, 0.98f, 20,20);
-			glColor3f(1,0.25,0.125);
+			glColor3f(1,0.2,0.1);
 			gluSphere(sphere, 1, 20,20);
 			sphereTex->Unbind();
 
