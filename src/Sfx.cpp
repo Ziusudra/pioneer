@@ -8,7 +8,8 @@
 #include "TextureCache.h"
 #include "render/Render.h"
 
-static const int s_maxSfxPerFrame = 1024;
+static const int	s_maxSfxPerFrame	= 1024;
+static const float	s_explosionLifespan	= 3.f;
 
 Sfx::Sfx()
 {
@@ -72,7 +73,7 @@ void Sfx::TimeStepUpdate(const float timeStep)
 
 	switch (m_type) {
 		case TYPE_EXPLOSION:
-			if (m_age > 3.0) m_type = TYPE_NONE;
+			if (m_age > s_explosionLifespan) m_type = TYPE_NONE;
 			break;
 		case TYPE_DAMAGE:
 			if (m_age > 2.0) m_type = TYPE_NONE;
@@ -111,7 +112,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			glPushMatrix();
 
 			glTranslatef(fpos.x, fpos.y, fpos.z);
-			scale = 10 * m_age;
+			scale = m_radius + m_radius * 5 * sqrt(m_age / s_explosionLifespan);
 			glScalef(scale, scale, scale);
 
 			glEnableClientState(GL_VERTEX_ARRAY);
@@ -179,13 +180,18 @@ void Sfx::Add(const Body *b, TYPE t)
 	sfx->m_type = t;
 	sfx->m_age = 0;
 	sfx->SetPosition(b->GetPosition());
-	if (t == TYPE_DAMAGE) {
-		sfx->m_vel = b->GetVelocity() + 200.0*vector3d(
-				Pi::rng.Double()-0.5,
-				Pi::rng.Double()-0.5,
-				Pi::rng.Double()-0.5);
+	sfx->m_vel = b->GetVelocity();
+	switch (t) {
+		case TYPE_DAMAGE:
+			sfx->m_vel += 200.0 * vector3d(
+				Pi::rng.Double() - 0.5,
+				Pi::rng.Double() - 0.5,
+				Pi::rng.Double() - 0.5);
+			break;
+		case TYPE_EXPLOSION:
+			sfx->m_radius = b->GetBoundingRadius() / 2;
+			break;
 	}
-	else sfx->m_vel = b->GetVelocity();
 }
 
 void Sfx::TimeStepAll(const float timeStep, Frame *f)

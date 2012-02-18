@@ -30,6 +30,7 @@ private:
 	vector3d m_pos;
 	vector3d m_vel;
 	float m_age;
+	float m_radius;
 	enum TYPE m_type;
 
 	struct Vertex {
