@@ -9,7 +9,7 @@
 #include "render/Render.h"
 
 static const int	s_maxSfxPerFrame	= 1024;
-static const float	s_explosionLifespan	= 3.f;
+static const float	s_explosionLifespan	= 2.f;
 
 Sfx::Sfx()
 {
@@ -90,6 +90,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 	GLUquadricObj *sphere = 0;
 	std::vector<Vertex> verts;
 	float scale = 0;
+	float fade = 0;
 	float col[4];
 
 	vector3d fpos = ftransform * GetPosition();
@@ -112,7 +113,9 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			glPushMatrix();
 
 			glTranslatef(fpos.x, fpos.y, fpos.z);
-			scale = m_radius + m_radius * 5 * sqrt(m_age / s_explosionLifespan);
+			fade = sqrt(m_age / s_explosionLifespan);
+			scale = m_radius + (m_radius * 29 * fade);
+			fade = 1 - fade;
 			glScalef(scale, scale, scale);
 
 			glEnableClientState(GL_VERTEX_ARRAY);
@@ -122,7 +125,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 
 			glowTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR "/textures/halo.png");
 			glowTex->Bind();
-			glColor3f(1,1,0.75);
+			glColor4f(1,1,0.75,fade);
 			glVertexPointer(3, GL_FLOAT, sizeof(Vertex), &verts[0].pos);
 			glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
 			glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -138,7 +141,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			gluQuadricNormals(sphere, GLU_SMOOTH);
 			gluQuadricOrientation(sphere, GLU_OUTSIDE);
 			gluQuadricTexture(sphere, GL_TRUE);
-			glColor3f(1,0.2,0.1);
+			glColor4f(1,0.2,0.1,fade);
 			gluSphere(sphere, 1, 20,20);
 			sphereTex->Unbind();
 
