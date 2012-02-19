@@ -113,9 +113,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 			glPushMatrix();
 
 			glTranslatef(fpos.x, fpos.y, fpos.z);
-			fade = sqrt(m_age / s_explosionLifespan);
-			scale = m_radius + (m_radius * 29 * fade);
-			fade = 1 - fade;
+			scale = m_radius + (m_age * m_radius * 19);
 			glScalef(scale, scale, scale);
 
 			glEnableClientState(GL_VERTEX_ARRAY);
@@ -125,6 +123,7 @@ void Sfx::Render(const matrix4x4d &ftransform)
 
 			glowTex = Pi::textureCache->GetBillboardTexture(PIONEER_DATA_DIR "/textures/halo.png");
 			glowTex->Bind();
+			fade = 1 - sqrt(m_age / s_explosionLifespan);
 			glColor4f(1,1,0.75,fade);
 			glVertexPointer(3, GL_FLOAT, sizeof(Vertex), &verts[0].pos);
 			glTexCoordPointer(2, GL_FLOAT, sizeof(Vertex), &verts[0].u);
