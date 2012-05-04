@@ -297,17 +297,8 @@ bool Ship::OnCollision(Object *b, Uint32 flags, double relVel)
 		return true;
 	}
 
-	// hitting cargo scoop surface shouldn't do damage
-	if ((m_equipment.Get(Equip::SLOT_CARGOSCOOP) != Equip::NONE) && b->IsType(Object::CARGOBODY) && (flags & 0x100) && m_stats.free_capacity) {
-		Equip::Type item = dynamic_cast<CargoBody*>(b)->GetCargoType();
-		Pi::game->GetSpace()->KillBody(dynamic_cast<Body*>(b));
-		m_equipment.Add(item);
-		UpdateEquipStats();
-		if (this->IsType(Object::PLAYER))
-			Pi::Message(stringf(Lang::CARGO_SCOOP_ACTIVE_1_TONNE_X_COLLECTED, formatarg("item", Equip::types[item].name)));
-		// XXX Sfx::Add(this, Sfx::TYPE_SCOOP);
-		return true;
-	}
+	// scooping cargo shouldn't do damage
+	if (b->IsType(Object::CARGOBODY) && DoCargoScoop(dynamic_cast<CargoBody*>(b), relVel)) return false;
 
 	if (b->IsType(Object::PLANET)) {
 		// geoms still enabled when landed
@@ -1248,6 +1239,26 @@ bool Ship::Jettison(Equip::Type t)
 	} else {
 		return false;
 	}
+}
+
+bool Ship::DoCargoScoop(CargoBody *b, double relVel)
+{
+	if (!b->IsDead() && relVel < MAX_LANDING_SPEED && m_stats.free_capacity &&
+		(m_equipment.Get(Equip::SLOT_CARGOSCOOP) != Equip::NONE)) {
+		// XXX check location is in front and maybe below?
+		Equip::Type item = b->GetCargoType();
+		m_equipment.Add(item);
+		UpdateEquipStats();
+		if (this->IsType(Object::PLAYER)) {
+			Pi::Message(stringf(Lang::CARGO_SCOOP_ACTIVE_1_TONNE_X_COLLECTED, formatarg("item", Equip::types[item].name)));
+			// XXX This needs it's own sound
+			Sound::BodyMakeNoise(this, "Hull_hit_Small", 1.0f);
+		}
+		// XXX Sfx::Add(this, Sfx::TYPE_SCOOP); I'm guessing this was a place holder for tractor beam scoops
+		Pi::game->GetSpace()->KillBody(dynamic_cast<Body*>(b));
+		return true;
+	}
+	return false;
 }
 
 void Ship::OnEquipmentChange(Equip::Type e)

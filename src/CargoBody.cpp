@@ -49,9 +49,8 @@ bool CargoBody::OnDamage(Object *attacker, float kgDamage)
 
 bool CargoBody::OnCollision(Object *b, Uint32 flags, double relVel)
 {
-	if (b->IsType(Object::SHIP) && (flags & 0x100)) {
-		return true;
-	}
+	if (b->IsType(Object::SHIP) && (dynamic_cast<Ship*>(b)->DoCargoScoop(this, relVel)))
+		return false;
 
 	return DynamicBody::OnCollision(b, flags, relVel);
 }
